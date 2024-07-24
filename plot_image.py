@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from scipy.ndimage import generic_filter
 
+#TODO add a good compensation to the sonar data to compensate for weaker signals when objects are further away, and the angle is not perpendicular to the object
+
 # Original polar_to_cartesian function
 def polar_to_cartesian(polar_image, threshold=0):
     height, width = polar_image.shape
@@ -72,29 +74,72 @@ def apply_local_thresholding(x_coords, y_coords, values, grid_size, window_size)
 
     return filtered_x, filtered_y, filtered_values
 
+# Function to compensate for stronger signals when objects are further away and assuming perpendicular reflection
+def compensate_signal_strength(polar_image):
+    height, width = polar_image.shape
+    compensated_polar_image = np.copy(polar_image)
+    
+    max_distance = height
+    angular_range = np.linspace(-45, 45, width)
+    angular_range_rad = np.deg2rad(angular_range)
+    
+    for r in range(height):
+        distance_compensation_factor = max_distance / (r + 1)
+        for i, theta in enumerate(angular_range_rad):
+            angle_compensation_factor = np.abs(np.cos(theta))  # Stronger signal when perpendicular
+            compensated_polar_image[r, i] *= distance_compensation_factor * angle_compensation_factor
+    
+    return compensated_polar_image
+
 # Main script
 image_path = 'test.png'
 polar_image = read_image(image_path)
-x_coords, y_coords, values = polar_to_cartesian(polar_image, threshold=0)
+
+# Compensate signal strength
+compensated_polar_image = compensate_signal_strength(polar_image)
+
+# Convert compensated polar image to cartesian coordinates
+x_coords_comp, y_coords_comp, values_comp = polar_to_cartesian(compensated_polar_image, threshold=0)
+
+# Apply local thresholding
 grid_size = 300  # Adjust grid resolution as needed
 window_size = 5  # Local window size
-x_coords_filtered, y_coords_filtered, values_filtered = apply_local_thresholding(x_coords, y_coords, values, grid_size, window_size)
+x_coords_filtered, y_coords_filtered, values_filtered = apply_local_thresholding(x_coords_comp, y_coords_comp, values_comp, grid_size, window_size)
 
 # Plotting
-plt.figure(figsize=(12, 6))
-plt.subplot(1, 2, 1)
-plt.scatter(x_coords, y_coords, c=values, cmap='jet', s=20, edgecolor='none')
+plt.figure(figsize=(20, 10))
+
+# Original polar image
+plt.subplot(1, 4, 1)
+plt.imshow(polar_image, cmap='gray', aspect='auto')
 plt.colorbar()
-plt.title('Before Local Thresholding')
+plt.title('Original Polar Image')
+plt.xlabel('Angle')
+plt.ylabel('Distance')
+
+# Compensated polar image
+plt.subplot(1, 4, 2)
+plt.imshow(compensated_polar_image, cmap='gray', aspect='auto')
+plt.colorbar()
+plt.title('Compensated Polar Image')
+plt.xlabel('Angle')
+plt.ylabel('Distance')
+
+# Compensated Cartesian image
+plt.subplot(1, 4, 3)
+plt.scatter(x_coords_comp, y_coords_comp, c=values_comp, cmap='jet', s=20, edgecolor='none')
+plt.colorbar()
+plt.title('Compensated Cartesian Image')
 plt.xlabel('X Coordinate')
 plt.ylabel('Y Coordinate')
 plt.gca().set_facecolor('black')
 plt.axis('equal')
 
-plt.subplot(1, 2, 2)
+# Filtered Cartesian image
+plt.subplot(1, 4, 4)
 plt.scatter(x_coords_filtered, y_coords_filtered, c=values_filtered, cmap='jet', s=20, edgecolor='none')
 plt.colorbar()
-plt.title('After Local Thresholding')
+plt.title('Filtered Cartesian Image')
 plt.xlabel('X Coordinate')
 plt.ylabel('Y Coordinate')
 plt.gca().set_facecolor('black')
