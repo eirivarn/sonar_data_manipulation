@@ -117,7 +117,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     status_wtr.flush()?;
 
     // Example of extracting and saving an image
-    if let Some(img) = glf.extract_image(1).ok() {
+    if let Some(img) = glf.extract_image(20).ok() {
         img.save("test.png").unwrap();
         println!("Extracted image 1 and saved as test.png");
     }
