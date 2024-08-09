@@ -5,7 +5,7 @@ use csv::Writer;
 use glf::GLF;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let path = Path::new("/Users/eirikvarnes/code/totalenergies/tritech_log_2021-11-11-140826-glf_2023-09-01_1330/log_2024-07-12-095301.glf");
+    let path = Path::new("/Users/eirikvarnes/Desktop/test_data/06.08 pipeline_medium_test/2_run_long_range_2x_metal_pipe/log_2024-08-06-093027.glf");
     if !path.exists() {
         eprintln!("GLF file not found at {:?}", path);
         return Ok(());
@@ -117,7 +117,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     status_wtr.flush()?;
 
     // Example of extracting and saving an image
-    if let Some(img) = glf.extract_image(20).ok() {
+    if let Some(img) = glf.extract_image(6341).ok() {
         img.save("test.png").unwrap();
         println!("Extracted image 1 and saved as test.png");
     }
