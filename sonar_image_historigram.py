@@ -71,7 +71,6 @@ def draw_bounding_boxes(image, rois, colors):
 
     return image_with_boxes
 
-
 def save_zoomed_image_with_boxes(scaled_zoomed_image, rois, colors, output_path):
     image_with_boxes = draw_bounding_boxes(scaled_zoomed_image, rois, colors)
     cv2.imwrite(output_path, image_with_boxes)
@@ -133,11 +132,14 @@ image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 if image is None:
     raise ValueError("Could not open or find the image!")
 
+# Flip the image along the y-axis
+image = cv2.flip(image, 0)
+
 gain_value = 1.0
 enhanced_image = apply_gain(image, gain_value)
 
 cv2.namedWindow('Adjust Gain')
-cv2.createTrackbar('Gain', 'Adjust Gain', 10, 30, on_trackbar)
+cv2.createTrackbar('Gain', 'Adjust Gain', 1, 250, on_trackbar)
 on_trackbar(10)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
