@@ -7,7 +7,7 @@ use glf::GLF;
 use std::process::Command;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let path = Path::new("/Users/eirikvarnes/Desktop/test_data/06.08 pipeline_medium_test/9_run_short_range_2x_metal_pipe_fizzy_water/log_2024-08-06-102102.glf");
+    let path = Path::new("/Users/eirikvarnes/Desktop/test_data/06.08 pipeline_medium_test/11_run_short_range_2x_metal_pipe_candle_rocks/log_2024-08-06-103949.glf");
     if !path.exists() {
         eprintln!("GLF file not found at {:?}", path);
         return Ok(());
