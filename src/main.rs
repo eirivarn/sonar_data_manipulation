@@ -1,11 +1,13 @@
 use std::error::Error;
-use std::fs::File;
+use std::fs::{self, File};
 use std::path::Path;
+use std::io::{self, Write};
 use csv::Writer;
 use glf::GLF;
+use std::process::Command;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let path = Path::new("/Users/eirikvarnes/Desktop/test_data/06.08 pipeline_medium_test/8_run_short_range_2x_metal_pipe_rocks/log_2024-08-06-101206.glf");
+    let path = Path::new("/Users/eirikvarnes/Desktop/test_data/06.08 pipeline_medium_test/9_run_short_range_2x_metal_pipe_fizzy_water/log_2024-08-06-102102.glf");
     if !path.exists() {
         eprintln!("GLF file not found at {:?}", path);
         return Ok(());
@@ -116,10 +118,53 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     status_wtr.flush()?;
 
-    // Example of extracting and saving an image
-    if let Some(img) = glf.extract_image(1573).ok() {
+    // Ekstraher og lagre et bilde
+    if let Some(img) = glf.extract_image(1801).ok() {
         img.save("test.png").unwrap();
-        println!("Extracted image 1 and saved as test.png");
+        println!("Extracted image 1801 and saved as test.png");
+    }
+
+    // Spør brukeren om de vil lage en video
+    println!("Do you want to create a video from all images? (y/n)");
+    let mut input = String::new();
+    io::stdin().read_line(&mut input)?;
+
+    if input.trim().to_lowercase() == "y" {
+        let image_dir = "extracted_images";
+
+        // Opprett mappen for bildene hvis den ikke eksisterer
+        fs::create_dir_all(image_dir)?;
+
+        // Hent ut alle bilder og lagre dem i den nye mappen
+        for (index, _image) in glf.images.iter().enumerate() {
+            if let Some(img) = glf.extract_image(index).ok() {
+                let filename = format!("{}/image_{}.png", image_dir, index);
+                img.save(&filename).unwrap();
+                println!("Extracted image {} and saved as {}", index, filename);
+            }
+        }
+
+        // Lag en video av bildene med ffmpeg
+        let output = Command::new("ffmpeg")
+            .arg("-framerate")
+            .arg("10")  // Juster framerate etter behov
+            .arg("-i")
+            .arg(format!("{}/image_%d.png", image_dir))  // Input bilder med numerisk sekvens
+            .arg("-c:v")
+            .arg("libx264")
+            .arg("-pix_fmt")
+            .arg("yuv420p")
+            .arg("output_video.mp4")
+            .output()
+            .expect("Failed to execute ffmpeg");
+
+        if output.status.success() {
+            println!("Video created successfully as output_video.mp4");
+        } else {
+            eprintln!("Failed to create video: {:?}", output.stderr);
+        }
+    } else {
+        println!("Video creation skipped.");
     }
 
     Ok(())
