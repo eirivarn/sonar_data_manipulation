@@ -24,7 +24,7 @@ def overlay_text(image, text, position, font=cv2.FONT_HERSHEY_SIMPLEX, font_scal
 # Function to load timestamps from the CSV file
 def load_timestamps_from_csv(csv_file):
     df = pd.read_csv(csv_file)
-    df['Timestamp'] = df['Header'].apply(lambda x: x.split('time: ')[1].split('Z')[0])
+    df['Timestamp'] = df['Transmission Time'].apply(lambda x: x.split(' ')[1])
     return df['Timestamp'].tolist()
 
 # Function to create a video from images with overlayed timestamps
