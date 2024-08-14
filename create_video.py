@@ -2,7 +2,7 @@ import cv2
 import os
 import pandas as pd
 
-# Function to adjust the alpha (scaling factor) of the image
+# Function to adjust the alpha (transparency) of the image
 def adjust_alpha(image, alpha_value):
     return cv2.convertScaleAbs(image, alpha=alpha_value, beta=0)
 
@@ -16,7 +16,12 @@ def on_trackbar(val):
 
 # Function to overlay text (timestamp) on the image
 def overlay_text(image, text, position, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=0.6, font_color=(255, 255, 255), font_thickness=1):
-    cv2.putText(image, text, position, font, font_scale, font_color, font_thickness)
+    text_size, _ = cv2.getTextSize(text, font, font_scale, font_thickness)
+    text_width, text_height = text_size
+    x, y = position
+    x = max(x - text_width, 0)  # Ensure the text does not go out of the frame
+    y = max(y, text_height)  # Ensure the text does not go out of the frame
+    cv2.putText(image, text, (x, y), font, font_scale, font_color, font_thickness)
 
 # Function to load timestamps from the CSV file
 def load_timestamps_from_csv(csv_file):
@@ -25,7 +30,7 @@ def load_timestamps_from_csv(csv_file):
     return df['Timestamp'].tolist()
 
 # Function to create a video from images with overlayed timestamps
-def create_video_from_images(image_folder, output_video_path, alpha_value, timestamps, frame_rate=17.2):
+def create_video_from_images(image_folder, output_video_path, alpha_value, roi, timestamps, frame_rate=17.2):
     images = sorted([img for img in os.listdir(image_folder) if img.endswith(".png")], 
                     key=lambda x: int(x.split('_')[1].split('.')[0]))
 
@@ -36,8 +41,9 @@ def create_video_from_images(image_folder, output_video_path, alpha_value, times
     frame = cv2.imread(first_image_path)
     frame = adjust_alpha(frame, alpha_value)
     frame = cv2.flip(frame, 0)
-
-    height, width = frame.shape[:2]
+    
+    # Use the dimensions of the first cropped frame as a reference
+    height, width = roi[3], roi[2]
     video = cv2.VideoWriter(output_video_path, cv2.VideoWriter_fourcc(*'mp4v'), frame_rate, (width, height))
 
     for i, image in enumerate(images):
@@ -50,11 +56,15 @@ def create_video_from_images(image_folder, output_video_path, alpha_value, times
         frame = cv2.imread(image_path)
         adjusted_frame = adjust_alpha(frame, alpha_value)
         flipped_frame = cv2.flip(adjusted_frame, 0)
+        cropped_frame = flipped_frame[int(roi[1]):int(roi[1] + roi[3]), int(roi[0]):int(roi[0] + roi[2])]
 
-        # Overlay the timestamp on the upper right corner
-        overlay_text(flipped_frame, timestamp, (width - 150, 30))  # Adjust the position as needed
+        # Resize the cropped frame to match the video dimensions exactly (distorting if necessary)
+        resized_frame = cv2.resize(cropped_frame, (width, height))
 
-        video.write(flipped_frame)
+        # Overlay the timestamp on the upper right corner, adjusting for the resized frame
+        overlay_text(resized_frame, timestamp, (width - 10, 20))
+
+        video.write(resized_frame)
         
     video.release()
     cv2.destroyAllWindows()
@@ -74,7 +84,7 @@ cv2.imshow('Adjusted Image', original_image)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
-# Select ROI and apply adjustments
+# Adjust the original image based on alpha value and select ROI
 adjusted_image = adjust_alpha(original_image, alpha_value)
 flipped_image = cv2.flip(adjusted_image, 0)
 roi = cv2.selectROI("Select ROI", flipped_image, showCrosshair=True)
@@ -84,4 +94,4 @@ cv2.destroyAllWindows()
 csv_file = 'image_records.csv'
 timestamps = load_timestamps_from_csv(csv_file)
 output_video_path = 'output_video_with_adjusted_alpha_and_cropped.mp4'
-create_video_from_images(image_folder, output_video_path, alpha_value, timestamps, frame_rate=17.2)
+create_video_from_images(image_folder, output_video_path, alpha_value, roi, timestamps)
