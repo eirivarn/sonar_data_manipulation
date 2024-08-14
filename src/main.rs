@@ -7,7 +7,7 @@ use glf::GLF;
 use std::process::Command;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let path = Path::new("/Users/eirikvarnes/Desktop/test_data/06.08 pipeline_medium_test/11_run_short_range_2x_metal_pipe_candle_rocks/log_2024-08-06-103949.glf");
+    let path = Path::new("/Users/eirikvarnes/Desktop/test_data/06.08 pipeline_medium_test/2_run_long_range_2x_metal_pipe/log_2024-08-06-093027.glf");
     if !path.exists() {
         eprintln!("GLF file not found at {:?}", path);
         return Ok(());
@@ -119,7 +119,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     status_wtr.flush()?;
 
     // Ekstraher og lagre et bilde
-    if let Some(img) = glf.extract_image(1801).ok() {
+    if let Some(img) = glf.extract_image(50).ok() {
         img.save("test.png").unwrap();
         println!("Extracted image 1801 and saved as test.png");
     }
